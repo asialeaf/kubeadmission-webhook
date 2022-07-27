@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -39,7 +40,8 @@ func run() int {
 
 	promlogConfig := &promlog.Config{}
 	flag.AddFlags(kingpin.CommandLine, promlogConfig)
-
+	// add version info
+	addVersion()
 	kingpin.Version(version.Print("kubeadmission-webhook"))
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
@@ -122,4 +124,11 @@ func run() int {
 			return 0
 		}
 	}
+}
+
+func addVersion() {
+	version.Version = "v1.0"
+	version.Branch = "main"
+	version.BuildUser = "yeyazhou@harmonycloud.cn"
+	version.BuildDate = time.Now().Format("2006-01-02 15:04:05 MST Mon")
 }
