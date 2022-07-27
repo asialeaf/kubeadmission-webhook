@@ -19,15 +19,15 @@ type Config struct {
 // type MixdList []*Config
 
 func LoadFile(filename string) (*Config, error) {
-	var cfg Config
 	content, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
 
+	cfg := &Config{}
 	err = json.Unmarshal(content, &cfg.Mixedreslist)
 	if err != nil {
 		return nil, err
 	}
-	return &cfg, nil
+	return cfg, nil
 }
