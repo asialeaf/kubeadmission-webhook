@@ -69,13 +69,37 @@ spec:
     spec:
       serviceAccountName: admission-registry-sa
       containers:
+      - args:
+        - --web.listen-address=:8443
+        - --config.file=/etc/webhook/config/config.json
+        - --web.enable-lifecycle
       - name: kubeadmission-webhook
-        image: asialeaf/kubeadmission-webhook:v1.0
+        image: kubeadmission-webhook:v1.0
         imagePullPolicy: IfNotPresent
         ports:
         - name: webhook-https
           protocol: TCP
           containerPort: 8443
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /-/healthy
+            port: 8443
+            scheme: HTTPS
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /-/ready
+            port: 8443
+            scheme: HTTPS
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
         resources:
           limits:
             cpu: 2
