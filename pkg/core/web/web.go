@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"git.harmonycloud.cn/yeyazhou/kubeadmission-webhook/pkg/config"
+	"git.harmonycloud.cn/yeyazhou/kubeadmission-webhook/pkg/core/admission"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -37,6 +38,9 @@ func New(logger log.Logger, o *Options) *Handler {
 		birth:    time.Now(),
 		cwd:      cwd,
 	}
+
+	h.admission = admission.NewAPI(logger)
+	router.Mount("/admission", h.admission.Routes())
 
 	if o.EnableLifecycle {
 		router.Post("/-/reload", h.reload)
@@ -68,8 +72,7 @@ func (h *Handler) ApplyConfig(conf *config.Config) error {
 	defer h.mtx.Unlock()
 
 	h.config = conf
-
-	fmt.Println(conf.Mixedreslist[0])
+	h.admission.Update(conf)
 	return nil
 }
 

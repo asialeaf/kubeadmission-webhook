@@ -1,0 +1,8 @@
+[
+    {
+        "namespace": "default",
+        "name": "mixed-demo",
+        "mixed": true,
+        "priority": 101
+    }
+]
