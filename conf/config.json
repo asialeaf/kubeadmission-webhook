@@ -1,6 +1,14 @@
-{
-    "namespace": "default",
-    "name": "sleep",
-    "mixed": true,
-    "priority": 101
-}
+[
+    {
+        "namespace": "default",
+        "name": "aaa",
+        "mixed": true,
+        "priority": 101
+    },
+    {
+        "namespace": "kube-system",
+        "name": "demo",
+        "mixed": false,
+        "priority": 89
+    }
+]
