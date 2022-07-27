@@ -73,7 +73,7 @@ spec:
         - --web.listen-address=:8443
         - --config.file=/etc/webhook/config/config.json
         - --web.enable-lifecycle
-      - name: kubeadmission-webhook
+        name: kubeadmission-webhook
         image: kubeadmission-webhook:v1.0
         imagePullPolicy: IfNotPresent
         ports:
