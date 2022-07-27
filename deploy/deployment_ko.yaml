@@ -1,0 +1,120 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admission-registry-sa
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: admission-registry-clusterrole
+rules:
+- verbs: ["*"]
+  resources: ["validatingwebhookconfigurations", "mutatingwebhookconfigurations"]
+  apiGroups: ["admissionregistration.k8s.io"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admission-registry-clusterrolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admission-registry-clusterrole
+subjects:
+  - kind: ServiceAccount
+    name: admission-registry-sa
+    namespace: default
+
+---
+apiVersion: v1
+data:
+  config.json: |
+    [
+        {
+            "namespace": "default",
+            "name": "admission-test",
+            "mixed": true,
+            "priority": 102
+        },
+        {
+            "namespace": "devops",
+            "name": "devops-demo",
+            "mixed": false,
+            "priority": 89
+        }
+    ]
+kind: ConfigMap
+metadata:
+  name: admission-registry-config
+  namespace: default
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admission-registry
+  labels:
+    app: admission-registry
+spec:
+  selector:
+    matchLabels:
+      app: admission-registry
+  template:
+    metadata:
+      labels:
+        app: admission-registry
+    spec:
+      serviceAccountName: admission-registry-sa
+      containers:
+      - name: kubeadmission-webhook
+        image: ko://git.harmonycloud.cn/yeyazhou/kubeadmission-webhook/cmd/kubeadmission-webhook
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: webhook-https
+          protocol: TCP
+          containerPort: 8443
+        resources:
+          limits:
+            cpu: 2
+            memory: 1Gi      
+          requests:
+            cpu: 1
+            memory: 500Mi 
+        volumeMounts:
+        - name: webhook-certs
+          mountPath: /etc/webhook/certs
+          readOnly: true
+        - mountPath: /etc/webhook/config
+          name: config
+          readOnly: true
+      restartPolicy: Always
+      nodeSelector: 
+        kubernetes.io/hostname: k8s-master
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+      volumes:
+      - hostPath:
+          path: /etc/webhook/certs
+          type: DirectoryOrCreate
+        name: webhook-certs
+      - configMap:
+          defaultMode: 420
+          name: admission-registry-config
+        name: config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admission-registry
+  labels:
+    app: admission-registry
+spec:
+  ports:
+    - port: 443
+      targetPort: 8443
+  selector:
+    app: admission-registry

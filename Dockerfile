@@ -1,5 +1,5 @@
 # Build the webhook binary
-FROM golang:1.16-alpine3.13 as builder
+FROM golang:1.17 as builder
 
 RUN apt-get -y update && apt-get -y install upx
 
@@ -20,7 +20,7 @@ ENV GO111MODULE=on
 ENV GOPROXY="https://goproxy.cn,direct"
 
 RUN go mod download && \
-    go build -a -v -o /usr/local/bin/kubeadmission-webhook cmd/kubeadmission-webhook/main.go && \
+    go build -a -o /usr/local/bin/kubeadmission-webhook cmd/kubeadmission-webhook/main.go && \
     upx kubeadmission-webhook
 
 FROM alpine:3.13
