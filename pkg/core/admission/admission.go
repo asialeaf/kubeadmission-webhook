@@ -11,12 +11,14 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+
 	"k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
 
 	"git.harmonycloud.cn/yeyazhou/kubeadmission-webhook/pkg/chilog"
 	"git.harmonycloud.cn/yeyazhou/kubeadmission-webhook/pkg/config"
+	"git.harmonycloud.cn/yeyazhou/kubeadmission-webhook/pkg/utils"
 )
 
 type API struct {
@@ -46,27 +48,24 @@ func (api *API) Routes() chi.Router {
 	router.Use(middleware.RequestLogger(&chilog.KitLogger{Logger: api.logger}))
 	router.Use(middleware.Recoverer)
 	router.HandleFunc("/add-label", api.serveAddLabel)
-	router.HandleFunc("/testconfig", api.testConfig)
+	// router.HandleFunc("/testconfig", api.testConfig)
 	return router
 }
 
-func (api *API) testConfig(w http.ResponseWriter, r *http.Request) {
-	logger := log.With(api.logger, "admission", "testconfig")
+func (api *API) getLimitList() (names, namespaces []string) {
+	logger := log.With(api.logger, "admission", "getlimitlist")
 
 	api.mtx.RLock()
 	conf := api.conf
 	api.mtx.RUnlock()
 
-	// fmt.Println(conf.Mixedreslist)
-	// name := "demo"
-	var names, namespaces []string
 	for _, v := range conf.Mixedreslist {
 		names = append(names, v.Name)
 		namespaces = append(namespaces, v.Namespace)
 	}
-	level.Info(logger).Log("msg", fmt.Sprintf("%s", names))
-	level.Info(logger).Log("msg", fmt.Sprintf("%s", namespaces))
-
+	level.Info(logger).Log("names", fmt.Sprintf("%s", names))
+	level.Info(logger).Log("namespaces", fmt.Sprintf("%s", namespaces))
+	return names, namespaces
 }
 
 // toAdmissionResponse is a helper function to create an AdmissionResponse
@@ -115,9 +114,11 @@ func (api *API) serve(w http.ResponseWriter, r *http.Request, admit admitFunc) {
 		// klog.Error(err)
 		level.Error(logger).Log("err", err)
 		responseAdmissionReview.Response = toAdmissionResponse(err)
-	} else {
+	} else if api.isMixedList(requestedAdmissionReview) {
 		// pass to admitFunc
 		responseAdmissionReview.Response = admit(requestedAdmissionReview)
+	} else {
+		responseAdmissionReview.Response.Allowed = true
 	}
 
 	// Return the same UID
@@ -141,9 +142,11 @@ func (api *API) serveAddLabel(w http.ResponseWriter, r *http.Request) {
 	api.serve(w, r, addLabel)
 }
 
-func (api *API) isMixedList(ar v1beta1.AdmissionReview) *v1beta1.AdmissionResponse {
+func (api *API) isMixedList(ar v1beta1.AdmissionReview) bool {
 	logger := log.With(api.logger, "admission", "ismixedlist")
 	level.Info(logger).Log("msg", "determine if a resource is in mixed list")
+
+	names, namespaces := api.getLimitList()
 
 	obj := struct {
 		metav1.ObjectMeta
@@ -153,12 +156,12 @@ func (api *API) isMixedList(ar v1beta1.AdmissionReview) *v1beta1.AdmissionRespon
 	err := json.Unmarshal(raw, &obj)
 	if err != nil {
 		klog.Error(err)
-		return toAdmissionResponse(err)
 	}
-	reviewResponse := v1beta1.AdmissionResponse{}
-
-	reviewResponse.Allowed = true
-
-	return &reviewResponse
-
+	objName := obj.ObjectMeta.Name
+	objNamespace := obj.ObjectMeta.Namespace
+	if utils.InArray(objName, names) && utils.InArray(objNamespace, namespaces) {
+		return true
+	} else {
+		return false
+	}
 }
