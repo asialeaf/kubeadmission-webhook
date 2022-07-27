@@ -7,7 +7,7 @@ import (
 
 var log = NewLogger("", true)
 
-func TestKubeKey_Print(t *testing.T) {
+func TestWebhook_Print(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	for i := 0; i < 5; i++ {
 

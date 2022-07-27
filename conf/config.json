@@ -1,0 +1,6 @@
+{
+    "namespace": "default",
+    "name": "sleep",
+    "mixed": true,
+    "priority": 101
+}
