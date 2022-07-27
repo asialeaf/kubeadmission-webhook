@@ -48,7 +48,7 @@ func (api *API) Routes() chi.Router {
 	router.Use(middleware.RequestLogger(&chilog.KitLogger{Logger: api.logger}))
 	router.Use(middleware.Recoverer)
 	router.HandleFunc("/add-label", api.serveAddLabel)
-	// router.HandleFunc("/testconfig", api.testConfig)
+	// router.HandleFunc("/testconfig", api.getLimitList())
 	return router
 }
 

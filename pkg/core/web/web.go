@@ -2,10 +2,10 @@ package web
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	stdlog "log"
-	"net"
 	"net/http"
 	"os"
 	"time"
@@ -79,20 +79,22 @@ func (h *Handler) ApplyConfig(conf *config.Config) error {
 // Run serves the HTTP endpoints.
 func (h *Handler) Run(ctx context.Context) error {
 	level.Info(h.logger).Log("msg", "Start listening for connections", "address", h.options.ListenAddress)
-	listener, err := net.Listen("tcp", h.options.ListenAddress)
-	if err != nil {
-		return err
-	}
+	// listener, err := net.Listen("tcp", h.options.ListenAddress)
+	// if err != nil {
+	// 	return err
+	// }
 
 	errlog := stdlog.New(log.NewStdlibAdapter(level.Error(h.logger)), "", 0)
 	httpSrv := &http.Server{
-		Handler:  h.router,
-		ErrorLog: errlog,
+		Addr:      h.options.ListenAddress,
+		Handler:   h.router,
+		ErrorLog:  errlog,
+		TLSConfig: h.configTLS(h.options),
 	}
 
 	errCh := make(chan error)
 	go func() {
-		errCh <- httpSrv.Serve(listener)
+		errCh <- httpSrv.ListenAndServeTLS("", "")
 	}()
 
 	select {
@@ -139,5 +141,18 @@ func (h *Handler) testReady(f http.HandlerFunc) http.HandlerFunc {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			io.WriteString(w, "Service Unavailable")
 		}
+	}
+}
+
+func (h *Handler) configTLS(o *Options) *tls.Config {
+	sCert, err := tls.LoadX509KeyPair(o.CertFile, o.KeyFile)
+	if err != nil {
+		// klog.Fatal(err)
+		level.Error(h.logger).Log("msg", "Failed to loadX509keypair", "err", err)
+	}
+	return &tls.Config{
+		Certificates: []tls.Certificate{sCert},
+		// TODO: uses mutual tls after we agree on what cert the apiserver should use.
+		// ClientAuth:   tls.RequireAndVerifyClientCert,
 	}
 }

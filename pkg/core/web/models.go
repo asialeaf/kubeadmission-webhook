@@ -16,6 +16,8 @@ import (
 type Options struct {
 	ListenAddress   string
 	EnableLifecycle bool
+	CertFile        string
+	KeyFile         string
 	// Flags           map[string]string
 }
 

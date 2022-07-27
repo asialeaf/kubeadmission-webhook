@@ -27,7 +27,7 @@ func run() int {
 		listenAddress = kingpin.Flag(
 			"web.listen-address",
 			"The address to listen on for web interface.",
-		).Default(":8060").String()
+		).Default(":8443").String()
 		enableLifecycle = kingpin.Flag(
 			"web.enable-lifecycle",
 			"Enable reload via HTTP request.",
@@ -35,7 +35,15 @@ func run() int {
 		configFile = kingpin.Flag(
 			"config.file",
 			"Path to the configuration file.",
-		).Default("config.json").ExistingFile()
+		).Default("/etc/webhook/config/config.json").ExistingFile()
+		tlsCertFile = kingpin.Flag(
+			"tls.cert-file",
+			"File containing the default x509 Certificate for HTTPS. (CA cert, if any, concatenated after server cert).",
+		).Default("/etc/webhook/certs/tls.crt").ExistingFile()
+		tlsKeyFile = kingpin.Flag(
+			"tls.private-key-file",
+			"File containing the default x509 private key matching --tls-cert-file.",
+		).Default("/etc/webhook/certs/tls.key").ExistingFile()
 	)
 
 	promlogConfig := &promlog.Config{}
@@ -53,6 +61,8 @@ func run() int {
 	webHandler := web.New(log.With(logger, "component", "web"), &web.Options{
 		ListenAddress:   *listenAddress,
 		EnableLifecycle: *enableLifecycle,
+		CertFile:        *tlsCertFile,
+		KeyFile:         *tlsKeyFile,
 		// Flags:           flagsMap,
 	})
 
