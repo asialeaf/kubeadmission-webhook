@@ -119,13 +119,7 @@ func (api *API) serve(w http.ResponseWriter, r *http.Request, admit admitFunc) {
 		level.Error(logger).Log("err", err)
 		responseAdmissionReview.Response = toAdmissionResponse(err)
 	} else {
-		if api.isMixedList(requestedAdmissionReview) {
-			// pass to admitFunc
-			level.Info(logger).Log("msg", "in mixedlist")
-			responseAdmissionReview.Response = admit(requestedAdmissionReview)
-		} else {
-			responseAdmissionReview.Response.Allowed = true
-		}
+		responseAdmissionReview.Response = admit(requestedAdmissionReview)
 	}
 
 	// Return the same UID
@@ -154,6 +148,8 @@ func (api *API) isMixedList(ar admissionv1.AdmissionReview) bool {
 	level.Info(logger).Log("msg", "determine if a resource is in mixed list")
 
 	names, namespaces := api.getLimitList()
+
+	fmt.Println(names)
 
 	obj := struct {
 		metav1.ObjectMeta
