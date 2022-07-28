@@ -16,6 +16,14 @@ limitations under the License.
 
 package admission
 
+import (
+	"fmt"
+
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+)
+
 type patchOperation struct {
 	Op    string      `json:"op"`
 	Path  string      `json:"path"`
@@ -23,12 +31,12 @@ type patchOperation struct {
 }
 
 const (
-	PodLabelMixedKey             string = "hc/mixed-pod"
-	PodAnnotationPriorityKey     string = "hc/priority"
-	ContainerResourceCpuKey      string = "cmos.mixed/cpu"
-	ContainerResourceMemoryKey   string = "cmos.mixed/memory"
-	ContainerResourcePodCountKey string = "cmos.mixed/podcount"
-	PodNodeSelectorKey           string = "cmos/mixed-schedule"
+	PodLabelMixedKey             string              = "hc/mixed-pod"
+	PodAnnotationPriorityKey     string              = "hc/priority"
+	ContainerResourceCpuKey      corev1.ResourceName = "cmos.mixed/cpu"
+	ContainerResourceMemoryKey   corev1.ResourceName = "cmos.mixed/memory"
+	ContainerResourcePodCountKey string              = "cmos.mixed/podcount"
+	PodNodeSelectorKey           string              = "cmos/mixed-schedule"
 	// PodNodeSelectorLable string = `[
 	//      { "op": "add", "path": "/spec/template/spec/nodeSelector", "value": {"cmos/mixed-schedule": "true"}}
 	//  ]`
@@ -111,6 +119,45 @@ func mutatePodLables(target map[string]string, added map[string]string) (patch [
 				Value: value,
 			})
 		}
+	}
+	return
+}
+
+func mutateContainerResource(deployment *appsv1.Deployment) (patch []patchOperation) {
+	containers := deployment.Spec.Template.Spec.Containers
+	for index, container := range containers {
+		reqs := container.Resources.Requests
+		lims := container.Resources.Limits
+
+		patch = append(patch, patchOperation{
+			Op:   "add",
+			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests", index),
+			Value: map[corev1.ResourceName]resource.Quantity{
+				ContainerResourceCpuKey: reqs[corev1.ResourceCPU],
+			},
+		})
+		patch = append(patch, patchOperation{
+			Op:   "add",
+			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests", index),
+			Value: map[corev1.ResourceName]resource.Quantity{
+				ContainerResourceMemoryKey: reqs[corev1.ResourceMemory],
+			},
+		})
+		patch = append(patch, patchOperation{
+			Op:   "add",
+			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/limits", index),
+			Value: map[corev1.ResourceName]resource.Quantity{
+				ContainerResourceCpuKey: lims[corev1.ResourceCPU],
+			},
+		})
+		patch = append(patch, patchOperation{
+			Op:   "add",
+			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/limits", index),
+			Value: map[corev1.ResourceName]resource.Quantity{
+				ContainerResourceCpuKey: lims[corev1.ResourceCPU],
+			},
+		})
+
 	}
 	return
 }
