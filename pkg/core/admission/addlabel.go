@@ -26,10 +26,10 @@ import (
 
 const (
 	addFirstLabelPatch string = `[
-         { "op": "add", "path": "/metadata/labels", "value": {"hc/mixed-pod": "yes"}}
+         { "op": "add", "path": "/metadata/labels", "value": {"added-label": "yes"}}
      ]`
 	addAdditionalLabelPatch string = `[
-         { "op": "add", "path": "/metadata/labels/hc\/mixed-pod", "value": "yes" }
+         { "op": "add", "path": "/metadata/labels/added-label", "value": "yes" }
      ]`
 )
 
