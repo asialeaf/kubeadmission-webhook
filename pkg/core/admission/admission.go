@@ -13,6 +13,7 @@ import (
 	"github.com/go-kit/log/level"
 
 	admissionv1 "k8s.io/api/admission/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"git.harmonycloud.cn/yeyazhou/kubeadmission-webhook/pkg/chilog"
@@ -45,7 +46,7 @@ func (api *API) Routes() chi.Router {
 	router.Use(middleware.RealIP)
 	router.Use(middleware.RequestLogger(&chilog.KitLogger{Logger: api.logger}))
 	router.Use(middleware.Recoverer)
-	router.HandleFunc("/mutate", api.serveAddLabel)
+	router.HandleFunc("/mutate", api.serveMutate)
 	// router.HandleFunc("/testconfig", api.getLimitList())
 	return router
 }
@@ -118,9 +119,6 @@ func (api *API) serve(w http.ResponseWriter, r *http.Request, admit admitFunc) {
 		level.Error(logger).Log("err", err)
 		responseAdmissionReview.Response = toAdmissionResponse(err)
 	} else {
-		ismixedlist := api.isMixedList(requestedAdmissionReview)
-		level.Info(logger).Log("msg", fmt.Sprintf("Ismixedlist: %v", ismixedlist))
-
 		responseAdmissionReview.Response = admit(requestedAdmissionReview)
 	}
 
@@ -141,44 +139,42 @@ func (api *API) serve(w http.ResponseWriter, r *http.Request, admit admitFunc) {
 	}
 }
 
-func (api *API) serveAddLabel(w http.ResponseWriter, r *http.Request) {
-	api.serve(w, r, addLabel)
+func (api *API) serveMutate(w http.ResponseWriter, r *http.Request) {
+	api.serve(w, r, api.mutate)
 }
 
-func (api *API) isMixedList(ar admissionv1.AdmissionReview) bool {
-	logger := log.With(api.logger, "admission", "ismixedlist")
-	level.Info(logger).Log("msg", "determine if a resource is in mixed list")
+func (api *API) mutate(ar admissionv1.AdmissionReview) *admissionv1.AdmissionResponse {
+	logger := log.With(api.logger, "admission", "mutate")
+	req := ar.Request
+	var objectMeta *metav1.ObjectMeta
+	level.Info(logger).Log("msg", fmt.Sprintf("AdmissionReview for Kind=%s, Namespace=%s Name=%s UID=%s", req.Kind.Kind, req.Namespace, req.Name, req.UID))
 
-	names, namespaces := api.getLimitList()
+	switch req.Kind.Kind {
+	case "Deployment":
+		var deployment appsv1.Deployment
+		if err := json.Unmarshal(req.Object.Raw, &deployment); err != nil {
+			level.Error(logger).Log("msg", "can't not unmarshal raw object", "err", err)
+			return &admissionv1.AdmissionResponse{
+				Result: &metav1.Status{
+					Code:    http.StatusBadRequest,
+					Message: err.Error(),
+				},
+			}
 
-	fmt.Println(names)
-
-	obj := struct {
-		metav1.ObjectMeta
-		Data map[string]string
-	}{}
-	raw := ar.Request.Object.Raw
-	err := json.Unmarshal(raw, &obj)
-	if err != nil {
-		// klog.Error(err)
-		level.Error(logger).Log("msg", "json unmarsha error", "err", err)
-	}
-	objName := obj.ObjectMeta.GetName()
-	objNamespace := obj.ObjectMeta.Namespace
-
-	level.Debug(logger).Log("msg", fmt.Sprintf("objName: %v,objNamespace:%v", objName, objNamespace))
-	nameisExist := false
-	namespaceisExist := false
-	for _, v := range names {
-		if objName == v {
-			nameisExist = true
+		}
+		objectMeta = &deployment.ObjectMeta
+	default:
+		return &admissionv1.AdmissionResponse{
+			Result: &metav1.Status{
+				Code:    http.StatusBadRequest,
+				Message: fmt.Sprintf("can't handle the kind(%s) object", req.Kind.Kind),
+			},
 		}
 	}
-	for _, v := range namespaces {
-		if objNamespace == v {
-			namespaceisExist = true
+	if !api.mutationRequired(objectMeta) {
+		return &admissionv1.AdmissionResponse{
+			Allowed: true,
 		}
 	}
-	level.Debug(logger).Log("msg", fmt.Sprintf("nameisExist: %v,namespaceisExist:%v", nameisExist, namespaceisExist))
-	return nameisExist && namespaceisExist
+	return addLabel(ar)
 }
