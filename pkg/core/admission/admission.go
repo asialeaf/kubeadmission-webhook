@@ -163,10 +163,10 @@ func (api *API) isMixedList(ar admissionv1.AdmissionReview) bool {
 		// klog.Error(err)
 		level.Error(logger).Log("msg", "json unmarsha error", "err", err)
 	}
-	objName := obj.ObjectMeta.Name
+	objName := obj.ObjectMeta.GetName()
 	objNamespace := obj.ObjectMeta.Namespace
 
-	level.Info(logger).Log("msg", fmt.Sprintf("objName: %v,objNamespace:%v", objName, objNamespace))
+	level.Debug(logger).Log("msg", fmt.Sprintf("objName: %v,objNamespace:%v", objName, objNamespace))
 	nameisExist := false
 	namespaceisExist := false
 	for _, v := range names {
@@ -179,6 +179,6 @@ func (api *API) isMixedList(ar admissionv1.AdmissionReview) bool {
 			namespaceisExist = true
 		}
 	}
-	level.Info(logger).Log("msg", fmt.Sprintf("nameisExist: %v,namespaceisExist:%v", nameisExist, namespaceisExist))
+	level.Debug(logger).Log("msg", fmt.Sprintf("nameisExist: %v,namespaceisExist:%v", nameisExist, namespaceisExist))
 	return nameisExist && namespaceisExist
 }
