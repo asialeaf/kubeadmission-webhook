@@ -28,5 +28,12 @@ spec:
         - name: http
           protocol: TCP
           containerPort: 80
+        resources:
+          limits:
+            cpu: 2
+            memory: 500Mi      
+          requests:
+            cpu: 1
+            memory: 200Mi         
         imagePullPolicy: IfNotPresent
       restartPolicy: Always

@@ -27,5 +27,12 @@ spec:
         command:
           - "sleep"
           - "3600"
+        resources:
+          limits:
+            cpu: 500m
+            memory: 500Mi      
+          requests:
+            cpu: 200m
+            memory: 200Mi 
         imagePullPolicy: IfNotPresent
       restartPolicy: Always
