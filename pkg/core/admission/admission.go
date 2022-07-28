@@ -179,11 +179,15 @@ func (api *API) mutate(ar admissionv1.AdmissionReview) *admissionv1.AdmissionRes
 	}
 
 	// 执行操作
-	annotations := map[string]string{
-		PodAnnotationPriorityKey: strconv.FormatBool(api.conf.Mixedreslist[index].Mixed),
+	podAnnotations := map[string]string{
+		PodAnnotationPriorityKey: strconv.FormatInt(api.conf.Mixedreslist[index].Priority, 10),
+	}
+	podLabels := map[string]string{
+		PodLabelMixedKey: strconv.FormatBool(api.conf.Mixedreslist[index].Mixed),
 	}
 	var patch []patchOperation
-	patch = append(patch, mutatePodAnnotations(deployment.Spec.Template.ObjectMeta.Annotations, annotations)...)
+	patch = append(patch, mutatePodAnnotations(deployment.Spec.Template.ObjectMeta.Annotations, podAnnotations)...)
+	patch = append(patch, mutatePodLables(deployment.Spec.Template.ObjectMeta.Labels, podLabels)...)
 
 	patchBytes, err := json.Marshal(patch)
 	if err != nil {

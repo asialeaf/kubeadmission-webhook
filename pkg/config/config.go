@@ -9,7 +9,7 @@ type MixedRes struct {
 	Namespace string `json:"namespace",omitempty`
 	Name      string `json:"name",omitempty`
 	Mixed     bool   `json:"mixed,omitempty"`
-	Priority  int    `json:"priority`
+	Priority  int64  `json:"priority`
 }
 
 type Config struct {
