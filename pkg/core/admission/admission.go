@@ -17,7 +17,6 @@ import (
 
 	"git.harmonycloud.cn/yeyazhou/kubeadmission-webhook/pkg/chilog"
 	"git.harmonycloud.cn/yeyazhou/kubeadmission-webhook/pkg/config"
-	"git.harmonycloud.cn/yeyazhou/kubeadmission-webhook/pkg/utils"
 )
 
 type API struct {
@@ -119,6 +118,9 @@ func (api *API) serve(w http.ResponseWriter, r *http.Request, admit admitFunc) {
 		level.Error(logger).Log("err", err)
 		responseAdmissionReview.Response = toAdmissionResponse(err)
 	} else {
+		ismixedlist := api.isMixedList(requestedAdmissionReview)
+		level.Info(logger).Log("msg", fmt.Sprintf("Ismixedlist: %v", ismixedlist))
+
 		responseAdmissionReview.Response = admit(requestedAdmissionReview)
 	}
 
@@ -163,9 +165,19 @@ func (api *API) isMixedList(ar admissionv1.AdmissionReview) bool {
 	}
 	objName := obj.ObjectMeta.Name
 	objNamespace := obj.ObjectMeta.Namespace
-	if utils.InArray(objName, names) && utils.InArray(objNamespace, namespaces) {
-		return true
-	} else {
-		return false
+
+	nameisExist := false
+	namespaceisExist := false
+	for _, v := range names {
+		if objName == v {
+			nameisExist = true
+		}
 	}
+	for _, v := range namespaces {
+		if objNamespace == v {
+			namespaceisExist = true
+		}
+	}
+	level.Info(logger).Log("msg", fmt.Sprintf("nameisExist: %v,namespaceisExist:%v", nameisExist, namespaceisExist))
+	return nameisExist && namespaceisExist
 }
