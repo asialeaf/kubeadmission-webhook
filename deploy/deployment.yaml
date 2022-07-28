@@ -123,11 +123,11 @@ spec:
             cpu: 1
             memory: 500Mi 
         volumeMounts:
-        - name: webhook-certs
+        - name: admission-certs
           mountPath: /etc/webhook/certs
           readOnly: true
         - mountPath: /etc/webhook/config
-          name: admission-certs
+          name: config
           readOnly: true
       restartPolicy: Always
       nodeSelector: 
