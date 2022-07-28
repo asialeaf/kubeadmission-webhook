@@ -14,7 +14,6 @@ import (
 
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog"
 
 	"git.harmonycloud.cn/yeyazhou/kubeadmission-webhook/pkg/chilog"
 	"git.harmonycloud.cn/yeyazhou/kubeadmission-webhook/pkg/config"
@@ -119,11 +118,14 @@ func (api *API) serve(w http.ResponseWriter, r *http.Request, admit admitFunc) {
 		// klog.Error(err)
 		level.Error(logger).Log("err", err)
 		responseAdmissionReview.Response = toAdmissionResponse(err)
-	} else if api.isMixedList(requestedAdmissionReview) {
-		// pass to admitFunc
-		responseAdmissionReview.Response = admit(requestedAdmissionReview)
 	} else {
-		responseAdmissionReview.Response.Allowed = true
+		if api.isMixedList(requestedAdmissionReview) {
+			// pass to admitFunc
+			level.Info(logger).Log("msg", "in mixedlist")
+			responseAdmissionReview.Response = admit(requestedAdmissionReview)
+		} else {
+			responseAdmissionReview.Response.Allowed = true
+		}
 	}
 
 	// Return the same UID
@@ -160,7 +162,8 @@ func (api *API) isMixedList(ar admissionv1.AdmissionReview) bool {
 	raw := ar.Request.Object.Raw
 	err := json.Unmarshal(raw, &obj)
 	if err != nil {
-		klog.Error(err)
+		// klog.Error(err)
+		level.Error(logger).Log("msg", "json unmarsha error", "err", err)
 	}
 	objName := obj.ObjectMeta.Name
 	objNamespace := obj.ObjectMeta.Namespace
