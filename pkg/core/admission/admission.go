@@ -12,7 +12,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 
-	"k8s.io/api/admission/v1beta1"
+	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
 
@@ -70,8 +70,8 @@ func (api *API) getLimitList() (names, namespaces []string) {
 
 // toAdmissionResponse is a helper function to create an AdmissionResponse
 // with an embedded error
-func toAdmissionResponse(err error) *v1beta1.AdmissionResponse {
-	return &v1beta1.AdmissionResponse{
+func toAdmissionResponse(err error) *admissionv1.AdmissionResponse {
+	return &admissionv1.AdmissionResponse{
 		Result: &metav1.Status{
 			Message: err.Error(),
 		},
@@ -79,7 +79,7 @@ func toAdmissionResponse(err error) *v1beta1.AdmissionResponse {
 }
 
 // admitFunc is the type we use for all of our validators and mutators
-type admitFunc func(v1beta1.AdmissionReview) *v1beta1.AdmissionResponse
+type admitFunc func(admissionv1.AdmissionReview) *admissionv1.AdmissionResponse
 
 // serve handles the http portion of a request prior to handing to an admit
 // function
@@ -104,10 +104,15 @@ func (api *API) serve(w http.ResponseWriter, r *http.Request, admit admitFunc) {
 	// klog.V(2).Info(fmt.Sprintf("handling request: %s", body))
 
 	// The AdmissionReview that was sent to the webhook
-	requestedAdmissionReview := v1beta1.AdmissionReview{}
+	requestedAdmissionReview := admissionv1.AdmissionReview{}
 
 	// The AdmissionReview that will be returned
-	responseAdmissionReview := v1beta1.AdmissionReview{}
+	responseAdmissionReview := admissionv1.AdmissionReview{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "AdmissionReview",
+			APIVersion: "admission.k8s.io/v1",
+		},
+	}
 
 	deserializer := codecs.UniversalDeserializer()
 	if _, _, err := deserializer.Decode(body, nil, &requestedAdmissionReview); err != nil {
@@ -142,7 +147,7 @@ func (api *API) serveAddLabel(w http.ResponseWriter, r *http.Request) {
 	api.serve(w, r, addLabel)
 }
 
-func (api *API) isMixedList(ar v1beta1.AdmissionReview) bool {
+func (api *API) isMixedList(ar admissionv1.AdmissionReview) bool {
 	logger := log.With(api.logger, "admission", "ismixedlist")
 	level.Info(logger).Log("msg", "determine if a resource is in mixed list")
 
