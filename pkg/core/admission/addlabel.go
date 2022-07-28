@@ -16,45 +16,89 @@ limitations under the License.
 
 package admission
 
-import (
-	"encoding/json"
-
-	admissionv1 "k8s.io/api/admission/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog"
-)
+type patchOperation struct {
+	Op    string      `json:"op"`
+	Path  string      `json:"path"`
+	Value interface{} `json:"value,omitempty"`
+}
 
 const (
-	addFirstLabelPatch string = `[
-         { "op": "add", "path": "/metadata/labels", "value": {"added-label": "yes"}}
-     ]`
-	addAdditionalLabelPatch string = `[
-         { "op": "add", "path": "/metadata/labels/added-label", "value": "yes" }
-     ]`
+	PodLabelMixedKey             string = "hc/mixed-pod"
+	PodAnnotationPriorityKey     string = "hc/priority"
+	ContainerResourceCpuKey      string = "cmos.mixed/cpu"
+	ContainerResourceMemoryKey   string = "cmos.mixed/memory"
+	ContainerResourcePodCountKey string = "cmos.mixed/podcount"
+	PodNodeSelectorKey           string = "cmos/mixed-schedule"
+	// PodNodeSelectorLable string = `[
+	//      { "op": "add", "path": "/spec/template/spec/nodeSelector", "value": {"cmos/mixed-schedule": "true"}}
+	//  ]`
 )
 
-// Add a label {"added-label": "yes"} to the object
-func addLabel(ar admissionv1.AdmissionReview) *admissionv1.AdmissionResponse {
-	klog.V(2).Info("calling add-label")
-	obj := struct {
-		metav1.ObjectMeta
-		Data map[string]string
-	}{}
-	raw := ar.Request.Object.Raw
-	err := json.Unmarshal(raw, &obj)
-	if err != nil {
-		klog.Error(err)
-		return toAdmissionResponse(err)
-	}
+// func addLabel(ar admissionv1.AdmissionReview) *admissionv1.AdmissionResponse {
+// 	klog.V(2).Info("calling add-label")
+// 	obj := struct {
+// 		metav1.ObjectMeta
+// 		Data map[string]string
+// 	}{}
+// 	raw := ar.Request.Object.Raw
+// 	err := json.Unmarshal(raw, &obj)
+// 	if err != nil {
+// 		klog.Error(err)
+// 		return toAdmissionResponse(err)
+// 	}
 
-	reviewResponse := admissionv1.AdmissionResponse{}
-	reviewResponse.Allowed = true
-	if len(obj.ObjectMeta.Labels) == 0 {
-		reviewResponse.Patch = []byte(addFirstLabelPatch)
-	} else {
-		reviewResponse.Patch = []byte(addAdditionalLabelPatch)
+// 	reviewResponse := admissionv1.AdmissionResponse{}
+// 	reviewResponse.Allowed = true
+// 	if len(obj.ObjectMeta.Labels) == 0 {
+// 		reviewResponse.Patch = []byte(addFirstLabelPatch)
+// 	} else {
+// 		reviewResponse.Patch = []byte(addAdditionalLabelPatch)
+// 	}
+// 	pt := admissionv1.PatchTypeJSONPatch
+// 	reviewResponse.PatchType = &pt
+// 	return &reviewResponse
+// }
+
+func mutatePodAnnotations(target map[string]string, added map[string]string) (patch []patchOperation) {
+	for key, value := range added {
+		if target == nil || target[key] == "" {
+			target = map[string]string{}
+			patch = append(patch, patchOperation{
+				Op:   "add",
+				Path: "/spec/template/metadata/annotations",
+				Value: map[string]string{
+					key: value,
+				},
+			})
+		} else {
+			patch = append(patch, patchOperation{
+				Op:    "replace",
+				Path:  "/spec/template/metadata/annotations/" + key,
+				Value: value,
+			})
+		}
 	}
-	pt := admissionv1.PatchTypeJSONPatch
-	reviewResponse.PatchType = &pt
-	return &reviewResponse
+	return
+}
+
+func mutatePodLables(target map[string]string, added map[string]string) (patch []patchOperation) {
+	for key, value := range added {
+		if target == nil || target[key] == "" {
+			target = map[string]string{}
+			patch = append(patch, patchOperation{
+				Op:   "add",
+				Path: "/spec/template/metadata/labels",
+				Value: map[string]string{
+					key: value,
+				},
+			})
+		} else {
+			patch = append(patch, patchOperation{
+				Op:    "replace",
+				Path:  "/spec/template/metadata/labels/" + key,
+				Value: value,
+			})
+		}
+	}
+	return
 }

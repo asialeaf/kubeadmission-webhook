@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"sync"
 
 	"github.com/go-chi/chi/v5"
@@ -15,6 +16,7 @@ import (
 	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog"
 
 	"git.harmonycloud.cn/yeyazhou/kubeadmission-webhook/pkg/chilog"
 	"git.harmonycloud.cn/yeyazhou/kubeadmission-webhook/pkg/config"
@@ -51,7 +53,7 @@ func (api *API) Routes() chi.Router {
 	return router
 }
 
-func (api *API) getLimitList() (names, namespaces []string) {
+func (api *API) getRequiredList() (requirements []string) {
 	logger := log.With(api.logger, "admission", "getlimitlist")
 
 	api.mtx.RLock()
@@ -59,12 +61,10 @@ func (api *API) getLimitList() (names, namespaces []string) {
 	api.mtx.RUnlock()
 
 	for _, v := range conf.Mixedreslist {
-		names = append(names, v.Name)
-		namespaces = append(namespaces, v.Namespace)
+		requirements = append(requirements, v.Name+"/"+v.Namespace)
 	}
-	level.Info(logger).Log("names", fmt.Sprintf("%s", names))
-	level.Info(logger).Log("namespaces", fmt.Sprintf("%s", namespaces))
-	return names, namespaces
+	level.Info(logger).Log("msg", fmt.Sprintf("requiredList: %s", requirements))
+	return requirements
 }
 
 // toAdmissionResponse is a helper function to create an AdmissionResponse
@@ -146,12 +146,12 @@ func (api *API) serveMutate(w http.ResponseWriter, r *http.Request) {
 func (api *API) mutate(ar admissionv1.AdmissionReview) *admissionv1.AdmissionResponse {
 	logger := log.With(api.logger, "admission", "mutate")
 	req := ar.Request
+	var deployment appsv1.Deployment
 	var objectMeta *metav1.ObjectMeta
 	level.Info(logger).Log("msg", fmt.Sprintf("AdmissionReview for Kind=%s, Namespace=%s Name=%s UID=%s", req.Kind.Kind, req.Namespace, req.Name, req.UID))
 
 	switch req.Kind.Kind {
 	case "Deployment":
-		var deployment appsv1.Deployment
 		if err := json.Unmarshal(req.Object.Raw, &deployment); err != nil {
 			level.Error(logger).Log("msg", "can't not unmarshal raw object", "err", err)
 			return &admissionv1.AdmissionResponse{
@@ -171,10 +171,38 @@ func (api *API) mutate(ar admissionv1.AdmissionReview) *admissionv1.AdmissionRes
 			},
 		}
 	}
-	if !api.mutationRequired(objectMeta) {
+	index, required := api.mutationRequired(objectMeta)
+	if !required {
 		return &admissionv1.AdmissionResponse{
 			Allowed: true,
 		}
 	}
-	return addLabel(ar)
+
+	// 执行操作
+	annotations := map[string]string{
+		PodAnnotationPriorityKey: strconv.FormatBool(api.conf.Mixedreslist[index].Mixed),
+	}
+	var patch []patchOperation
+	patch = append(patch, mutatePodAnnotations(deployment.Spec.Template.ObjectMeta.Annotations, annotations)...)
+
+	patchBytes, err := json.Marshal(patch)
+	if err != nil {
+		klog.Errorf("patch marshal error: %v", err)
+		return &admissionv1.AdmissionResponse{
+			Result: &metav1.Status{
+				Code:    http.StatusBadRequest,
+				Message: err.Error(),
+			},
+		}
+	}
+	return &admissionv1.AdmissionResponse{
+		Allowed: true,
+		Patch:   patchBytes,
+		PatchType: func() *admissionv1.PatchType {
+			pt := admissionv1.PatchTypeJSONPatch
+			return &pt
+		}(),
+	}
+
+	// return addLabel(ar)
 }
