@@ -194,7 +194,7 @@ func (api *API) mutate(ar admissionv1.AdmissionReview) *admissionv1.AdmissionRes
 	if mixed {
 		patch = append(patch, mutateContainerResource(&deployment)...)
 	}
-
+	level.Info(logger).Log("msg", fmt.Sprintf("Patch=%s", patch))
 	patchBytes, err := json.Marshal(patch)
 	if err != nil {
 		klog.Errorf("patch marshal error: %v", err)
