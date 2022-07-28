@@ -166,6 +166,7 @@ func (api *API) isMixedList(ar admissionv1.AdmissionReview) bool {
 	objName := obj.ObjectMeta.Name
 	objNamespace := obj.ObjectMeta.Namespace
 
+	level.Info(logger).Log("msg", fmt.Sprintf("objName: %v,objNamespace:%v", objName, objNamespace))
 	nameisExist := false
 	namespaceisExist := false
 	for _, v := range names {
