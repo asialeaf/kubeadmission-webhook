@@ -1,0 +1,20 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration​​
+metadata:
+  name: admission-registry
+webhooks:
+- name: cn.harmonycloud.admission-registry
+  rules:
+  - apiGroups:   [""]
+    apiVersions: ["v1"]
+    operations:  ["CREATE","UPDATE"]
+    resources:   ["deployments"]
+  clientConfig:
+    service:
+      namespace: default
+      name: admission-registry
+      path: "/admission/mutate"
+    caBundle: ${CA_BUNDLE}
+  admissionReviewVersions: ["v1", "v1beta1"]
+  sideEffects: None
+  timeoutSeconds: 5

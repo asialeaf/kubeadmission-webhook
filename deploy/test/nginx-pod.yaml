@@ -1,0 +1,22 @@
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: demo-nginx
+  name: demo-nginx
+  namespace: default
+spec:
+  containers:
+  - image: nginx:1.12
+    imagePullPolicy: IfNotPresent
+    name: web
+    ports:
+    - containerPort: 80
+      name: http
+      protocol: TCP
+  nodeSelector: 
+    kubernetes.io/hostname: k8s-master
+  tolerations:
+  - effect: NoSchedule
+    operator: Exists

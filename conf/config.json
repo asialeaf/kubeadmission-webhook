@@ -1,13 +1,13 @@
 [
     {
         "namespace": "default",
-        "name": "aaa",
+        "name": "nginx-test",
         "mixed": true,
         "priority": 102
     },
     {
-        "namespace": "kube-system",
-        "name": "demo",
+        "namespace": "devops",
+        "name": "busybox-test",
         "mixed": false,
         "priority": 89
     }

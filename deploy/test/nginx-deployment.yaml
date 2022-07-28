@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx-test
+  name: nginx-test
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-test
+  template:
+    metadata:
+      labels:
+        app: nginx-test
+    spec:
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      nodeSelector:
+        kubernetes.io/hostname: k8s-master
+      containers:
+      - image: nginx:1.12
+        name: web
+        ports:
+        - name: http
+          protocol: TCP
+          containerPort: 80
+        imagePullPolicy: IfNotPresent
+      restartPolicy: Always

@@ -10,9 +10,22 @@ kind: ClusterRole
 metadata:
   name: admission-registry-clusterrole
 rules:
-- verbs: ["*"]
-  resources: ["validatingwebhookconfigurations", "mutatingwebhookconfigurations"]
-  apiGroups: ["admissionregistration.k8s.io"]
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources: ["mutatingwebhookconfigurations", "validatingwebhookconfigurations"]
+    verbs: ["get", "list", "watch", "create", "update"]
+  # Rules below is used generate admission service secret
+  - apiGroups: ["certificates.k8s.io"]
+    resources: ["certificatesigningrequests"]
+    verbs: ["get", "list", "create", "delete"]
+  - apiGroups: ["certificates.k8s.io"]
+    resources: ["certificatesigningrequests/approval"]
+    verbs: ["create", "update"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create", "get", "patch"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get"]
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -35,13 +48,13 @@ data:
     [
         {
             "namespace": "default",
-            "name": "admission-test",
+            "name": "nginx-test",
             "mixed": true,
             "priority": 102
         },
         {
             "namespace": "devops",
-            "name": "devops-demo",
+            "name": "busybox-test",
             "mixed": false,
             "priority": 89
         }
@@ -72,6 +85,8 @@ spec:
       - args:
         - --web.listen-address=:8443
         - --config.file=/etc/webhook/config/config.json
+        - --tls.cert-file=/etc/webhook/certs/tls.crt
+        - --tls.private-key-file=/etc/webhook/certs/tls.key
         - --web.enable-lifecycle
         name: kubeadmission-webhook
         image: kubeadmission-webhook:v1.0
@@ -112,7 +127,7 @@ spec:
           mountPath: /etc/webhook/certs
           readOnly: true
         - mountPath: /etc/webhook/config
-          name: config
+          name: admission-certs
           readOnly: true
       restartPolicy: Always
       nodeSelector: 
@@ -121,10 +136,10 @@ spec:
       - effect: NoSchedule
         operator: Exists
       volumes:
-      - hostPath:
-          path: /etc/webhook/certs
-          type: DirectoryOrCreate
-        name: webhook-certs
+      - name: admission-certs
+        secret:
+          defaultMode: 420
+          secretName: admission-registry-secret
       - configMap:
           defaultMode: 420
           name: admission-registry-config
