@@ -87,12 +87,24 @@ func mutatePodLables(target map[string]string, added map[string]string) (patch [
 			target = map[string]string{}
 			patch = append(patch, patchOperation{
 				Op:   "add",
+				Path: "/spec/selector/matchLabels",
+				Value: map[string]string{
+					key: value,
+				},
+			})
+			patch = append(patch, patchOperation{
+				Op:   "add",
 				Path: "/spec/template/metadata/labels",
 				Value: map[string]string{
 					key: value,
 				},
 			})
 		} else {
+			patch = append(patch, patchOperation{
+				Op:    "replace",
+				Path:  "/spec/selector/matchLabels/" + key,
+				Value: value,
+			})
 			patch = append(patch, patchOperation{
 				Op:    "replace",
 				Path:  "/spec/template/metadata/labels/" + key,
