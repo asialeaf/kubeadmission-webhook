@@ -154,7 +154,7 @@ func mutateContainerResource(deployment *appsv1.Deployment) (patch []patchOperat
 			Op:   "add",
 			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/limits", index),
 			Value: map[corev1.ResourceName]resource.Quantity{
-				ContainerResourceCpuKey: lims[corev1.ResourceMemory],
+				ContainerResourceMemoryKey: lims[corev1.ResourceMemory],
 			},
 		})
 
