@@ -148,14 +148,14 @@ func mutateContainerResource(deployment *appsv1.Deployment) (patch []patchOperat
 			Op:   "add",
 			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests", index),
 			Value: map[corev1.ResourceName]resource.Quantity{
-				ContainerResourceCpuKey: reqs[corev1.ResourceCPU],
+				ContainerResourceMemoryKey: reqs[corev1.ResourceMemory],
 			},
 		})
 		patch = append(patch, patchOperation{
 			Op:   "add",
 			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests", index),
 			Value: map[corev1.ResourceName]resource.Quantity{
-				ContainerResourceMemoryKey: reqs[corev1.ResourceMemory],
+				ContainerResourceCpuKey: reqs[corev1.ResourceCPU],
 			},
 		})
 
