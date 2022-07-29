@@ -31,11 +31,11 @@ type patchOperation struct {
 }
 
 const (
-	PodLabelMixedKey             string = "hc/mixed-pod"
-	PodAnnotationPriorityKey     string = "hc/priority"
-	ContainerResourceCpuKey      string = "cmos.mixed/cpu"
-	ContainerResourceMemoryKey   string = "cmos.mixed/memory"
-	ContainerResourcePodCountKey string = "cmos.mixed/podcount"
+	PodLabelMixedKey             string = "hc~1mixed-pod"
+	PodAnnotationPriorityKey     string = "hc~1riority"
+	ContainerResourceCpuKey      string = "cmos.mixed~1cpu"
+	ContainerResourceMemoryKey   string = "cmos.mixed~1memory"
+	ContainerResourcePodCountKey string = "cmos.mixed~1podcount"
 	PodNodeSelectorKey           string = "cmos/mixed-schedule"
 	// PodNodeSelectorLable string = `[
 	//      { "op": "add", "path": "/spec/template/spec/nodeSelector", "value": {"cmos/mixed-schedule": "true"}}
@@ -133,7 +133,22 @@ func mutateContainerResource(deployment *appsv1.Deployment) (patch []patchOperat
 			Op:   "add",
 			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/limits", index),
 			Value: map[string]resource.Quantity{
+				ContainerResourceCpuKey: lims[corev1.ResourceCPU],
+			},
+		})
+		patch = append(patch, patchOperation{
+			Op:   "add",
+			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/limits", index),
+			Value: map[string]resource.Quantity{
 				ContainerResourceMemoryKey: lims[corev1.ResourceMemory],
+			},
+		})
+
+		patch = append(patch, patchOperation{
+			Op:   "add",
+			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests", index),
+			Value: map[string]resource.Quantity{
+				ContainerResourceCpuKey: reqs[corev1.ResourceCPU],
 			},
 		})
 		patch = append(patch, patchOperation{
@@ -143,21 +158,6 @@ func mutateContainerResource(deployment *appsv1.Deployment) (patch []patchOperat
 				ContainerResourceMemoryKey: reqs[corev1.ResourceMemory],
 			},
 		})
-
-		// patch = append(patch, patchOperation{
-		// 	Op:   "add",
-		// 	Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/limits", index),
-		// 	Value: map[string]resource.Quantity{
-		// 		ContainerResourceCpuKey: lims[corev1.ResourceCPU],
-		// 	},
-		// })
-		// patch = append(patch, patchOperation{
-		// 	Op:   "add",
-		// 	Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests", index),
-		// 	Value: map[string]resource.Quantity{
-		// 		ContainerResourceCpuKey: reqs[corev1.ResourceCPU],
-		// 	},
-		// })
 
 		// // add cmos.mixed/podcount
 		// patch = append(patch, patchOperation{
