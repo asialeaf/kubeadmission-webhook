@@ -159,26 +159,26 @@ func mutateContainerResource(deployment *appsv1.Deployment) (patch []patchOperat
 			},
 		})
 
-		// add cmos.mixed/podcount
-		patch = append(patch, patchOperation{
-			Op:   "add",
-			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests", index),
-			Value: map[string]string{
-				ContainerResourcePodCountKey: "1",
-			},
-		})
+		// // add cmos.mixed/podcount
+		// patch = append(patch, patchOperation{
+		// 	Op:   "add",
+		// 	Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests", index),
+		// 	Value: map[string]string{
+		// 		ContainerResourcePodCountKey: "1",
+		// 	},
+		// })
 
-		// replace requests.cpu requests.memory
-		patch = append(patch, patchOperation{
-			Op:    "replace",
-			Path:  fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests/cpu", index),
-			Value: 0,
-		})
-		patch = append(patch, patchOperation{
-			Op:    "replace",
-			Path:  fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests/memory", index),
-			Value: 0,
-		})
+		// // replace requests.cpu requests.memory
+		// patch = append(patch, patchOperation{
+		// 	Op:    "replace",
+		// 	Path:  fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests/cpu", index),
+		// 	Value: 0,
+		// })
+		// patch = append(patch, patchOperation{
+		// 	Op:    "replace",
+		// 	Path:  fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests/memory", index),
+		// 	Value: 0,
+		// })
 
 	}
 	return
