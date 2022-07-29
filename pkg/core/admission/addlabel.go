@@ -18,6 +18,7 @@ package admission
 
 import (
 	"fmt"
+	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -31,11 +32,11 @@ type patchOperation struct {
 }
 
 const (
-	PodLabelMixedKey             string = "hc~1mixed-pod"
-	PodAnnotationPriorityKey     string = "hc~1riority"
-	ContainerResourceCpuKey      string = "cmos.mixed~1cpu"
-	ContainerResourceMemoryKey   string = "cmos.mixed~1memory"
-	ContainerResourcePodCountKey string = "cmos.mixed~1podcount"
+	PodLabelMixedKey             string = "hc/mixed-pod"
+	PodAnnotationPriorityKey     string = "hc/riority"
+	ContainerResourceCpuKey      string = "cmos.mixed/cpu"
+	ContainerResourceMemoryKey   string = "cmos.mixed/memory"
+	ContainerResourcePodCountKey string = "cmos.mixed/podcount"
 	PodNodeSelectorKey           string = "cmos/mixed-schedule"
 	// PodNodeSelectorLable string = `[
 	//      { "op": "add", "path": "/spec/template/spec/nodeSelector", "value": {"cmos/mixed-schedule": "true"}}
@@ -81,7 +82,7 @@ func mutatePodAnnotations(target map[string]string, added map[string]string) (pa
 		} else {
 			patch = append(patch, patchOperation{
 				Op:    "replace",
-				Path:  "/spec/template/metadata/annotations/" + key,
+				Path:  "/spec/template/metadata/annotations/" + strings.Replace(key, "/", "~1", -1),
 				Value: value,
 			})
 		}
@@ -110,12 +111,12 @@ func mutatePodLables(target map[string]string, added map[string]string) (patch [
 		} else {
 			patch = append(patch, patchOperation{
 				Op:    "replace",
-				Path:  "/spec/selector/matchLabels/" + key,
+				Path:  "/spec/selector/matchLabels/" + strings.Replace(key, "/", "~1", -1),
 				Value: value,
 			})
 			patch = append(patch, patchOperation{
 				Op:    "replace",
-				Path:  "/spec/template/metadata/labels/" + key,
+				Path:  "/spec/template/metadata/labels/" + strings.Replace(key, "/", "~1", -1),
 				Value: value,
 			})
 		}
@@ -198,7 +199,7 @@ func mutateNodeSelectol(target map[string]string, added map[string]string) (patc
 		} else {
 			patch = append(patch, patchOperation{
 				Op:    "replace",
-				Path:  "/spec/template/spec/nodeSelector/" + key,
+				Path:  "/spec/template/spec/nodeSelector/" + strings.Replace(key, "/", "~1", -1),
 				Value: value,
 			})
 		}
