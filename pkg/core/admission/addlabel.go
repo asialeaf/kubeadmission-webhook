@@ -144,20 +144,20 @@ func mutateContainerResource(deployment *appsv1.Deployment) (patch []patchOperat
 			},
 		})
 
-		patch = append(patch, patchOperation{
-			Op:   "add",
-			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/limits", index),
-			Value: map[string]resource.Quantity{
-				ContainerResourceCpuKey: lims[corev1.ResourceCPU],
-			},
-		})
-		patch = append(patch, patchOperation{
-			Op:   "add",
-			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests", index),
-			Value: map[string]resource.Quantity{
-				ContainerResourceCpuKey: reqs[corev1.ResourceCPU],
-			},
-		})
+		// patch = append(patch, patchOperation{
+		// 	Op:   "add",
+		// 	Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/limits", index),
+		// 	Value: map[string]resource.Quantity{
+		// 		ContainerResourceCpuKey: lims[corev1.ResourceCPU],
+		// 	},
+		// })
+		// patch = append(patch, patchOperation{
+		// 	Op:   "add",
+		// 	Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests", index),
+		// 	Value: map[string]resource.Quantity{
+		// 		ContainerResourceCpuKey: reqs[corev1.ResourceCPU],
+		// 	},
+		// })
 
 		// // add cmos.mixed/podcount
 		// patch = append(patch, patchOperation{
