@@ -186,13 +186,18 @@ func (api *API) mutate(ar admissionv1.AdmissionReview) *admissionv1.AdmissionRes
 	podLabels := map[string]string{
 		PodLabelMixedKey: strconv.FormatBool(mixed),
 	}
+	nodeSelectolLabels := map[string]string{
+		PodNodeSelectorKey: "true",
+	}
 	var patch []patchOperation
 	patch = append(patch, mutatePodAnnotations(deployment.Spec.Template.ObjectMeta.Annotations, podAnnotations)...)
 	patch = append(patch, mutatePodLables(deployment.Spec.Template.ObjectMeta.Labels, podLabels)...)
 
 	// pod := deployment.Spec.Template.Spec
 	if mixed {
+		patch = append(patch, mutateNodeSelectol(deployment.Spec.Template.Spec.NodeSelector, nodeSelectolLabels)...)
 		patch = append(patch, mutateContainerResource(&deployment)...)
+
 	}
 	level.Info(logger).Log("msg", fmt.Sprintf("Patch=%s", patch))
 	patchBytes, err := json.Marshal(patch)

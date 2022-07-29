@@ -35,7 +35,7 @@ const (
 	PodAnnotationPriorityKey     string              = "hc/priority"
 	ContainerResourceCpuKey      corev1.ResourceName = "cmos.mixed/cpu"
 	ContainerResourceMemoryKey   corev1.ResourceName = "cmos.mixed/memory"
-	ContainerResourcePodCountKey string              = "cmos.mixed/podcount"
+	ContainerResourcePodCountKey corev1.ResourceName = "cmos.mixed/podcount"
 	PodNodeSelectorKey           string              = "cmos/mixed-schedule"
 	// PodNodeSelectorLable string = `[
 	//      { "op": "add", "path": "/spec/template/spec/nodeSelector", "value": {"cmos/mixed-schedule": "true"}}
@@ -159,6 +159,49 @@ func mutateContainerResource(deployment *appsv1.Deployment) (patch []patchOperat
 			},
 		})
 
+		// add cmos.mixed/podcount
+		patch = append(patch, patchOperation{
+			Op:   "add",
+			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests", index),
+			Value: map[corev1.ResourceName]resource.Quantity{
+				ContainerResourcePodCountKey: reqs[corev1.ResourceCPU],
+			},
+		})
+
+		// replace requests.cpu requests.memory
+		patch = append(patch, patchOperation{
+			Op:    "replace",
+			Path:  fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests/cpu", index),
+			Value: 0,
+		})
+		patch = append(patch, patchOperation{
+			Op:    "replace",
+			Path:  fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests/memory", index),
+			Value: 0,
+		})
+
+	}
+	return
+}
+
+func mutateNodeSelectol(target map[string]string, added map[string]string) (patch []patchOperation) {
+	for key, value := range added {
+		if target == nil || target[key] == "" {
+			target = map[string]string{}
+			patch = append(patch, patchOperation{
+				Op:   "add",
+				Path: "/spec/template/spec/nodeSelector",
+				Value: map[string]string{
+					key: value,
+				},
+			})
+		} else {
+			patch = append(patch, patchOperation{
+				Op:    "replace",
+				Path:  "/spec/template/spec/nodeSelector/" + key,
+				Value: value,
+			})
+		}
 	}
 	return
 }
