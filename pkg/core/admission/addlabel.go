@@ -129,6 +129,8 @@ func mutateContainerResource(deployment *appsv1.Deployment) (patch []patchOperat
 		reqs := container.Resources.Requests
 		lims := container.Resources.Limits
 
+		fmt.Printf("AdmissionReview for resources.requests.cpu=%v, resources.requests.memory=%v resources.limits.cpu=%v resources.limits.memory=%v", reqs[corev1.ResourceCPU], reqs[corev1.ResourceMemory], lims[corev1.ResourceCPU], lims[corev1.ResourceMemory])
+
 		patch = append(patch, patchOperation{
 			Op:   "add",
 			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/limits", index),
@@ -164,7 +166,7 @@ func mutateContainerResource(deployment *appsv1.Deployment) (patch []patchOperat
 			Op:   "add",
 			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests", index),
 			Value: map[corev1.ResourceName]resource.Quantity{
-				ContainerResourcePodCountKey: reqs[corev1.ResourceCPU],
+				ContainerResourcePodCountKey: resource.MustParse("1"),
 			},
 		})
 
@@ -172,12 +174,12 @@ func mutateContainerResource(deployment *appsv1.Deployment) (patch []patchOperat
 		patch = append(patch, patchOperation{
 			Op:    "replace",
 			Path:  fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests/cpu", index),
-			Value: 0,
+			Value: resource.MustParse("0"),
 		})
 		patch = append(patch, patchOperation{
 			Op:    "replace",
 			Path:  fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests/memory", index),
-			Value: 0,
+			Value: resource.MustParse("0"),
 		})
 
 	}
