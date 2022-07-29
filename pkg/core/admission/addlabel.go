@@ -126,7 +126,7 @@ func mutatePodLables(target map[string]string, added map[string]string) (patch [
 func mutateContainerResource(deployment *appsv1.Deployment) (patch []patchOperation) {
 	containers := deployment.Spec.Template.Spec.Containers
 	for index, container := range containers {
-		reqs := container.Resources.Requests
+		// reqs := container.Resources.Requests
 		lims := container.Resources.Limits
 
 		patch = append(patch, patchOperation{
@@ -144,20 +144,20 @@ func mutateContainerResource(deployment *appsv1.Deployment) (patch []patchOperat
 			},
 		})
 
-		patch = append(patch, patchOperation{
-			Op:   "add",
-			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests", index),
-			Value: map[string]resource.Quantity{
-				ContainerResourceMemoryKey: reqs[corev1.ResourceMemory],
-			},
-		})
-		patch = append(patch, patchOperation{
-			Op:   "add",
-			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests", index),
-			Value: map[string]resource.Quantity{
-				ContainerResourceCpuKey: reqs[corev1.ResourceCPU],
-			},
-		})
+		// patch = append(patch, patchOperation{
+		// 	Op:   "add",
+		// 	Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests", index),
+		// 	Value: map[string]resource.Quantity{
+		// 		ContainerResourceMemoryKey: reqs[corev1.ResourceMemory],
+		// 	},
+		// })
+		// patch = append(patch, patchOperation{
+		// 	Op:   "add",
+		// 	Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests", index),
+		// 	Value: map[string]resource.Quantity{
+		// 		ContainerResourceCpuKey: reqs[corev1.ResourceCPU],
+		// 	},
+		// })
 
 		// // add cmos.mixed/podcount
 		// patch = append(patch, patchOperation{
