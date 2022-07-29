@@ -327,3 +327,13 @@ K8S 准入控制器，控制Deployment类型资源，实现指定namespace和nam
        matchLabels:
          admission-webhook: enabled
    ```
+
+#### FAQ
+
+##### 能不能不重启就重新加载配置文件
+
+可以，两个方法:
+1. 发送 SIGHUP 信号量: `kill -HUP <pid>`
+2. 启动的时候加入 `--web.enable-lifecycle` 参数，然后通过 `HTTP PUT` 或 `HTTP POST` 方法访问 `/-/reload` 即可，例:
+   ```bash
+   curl -XPOST https://localhost:8443/-/reload
