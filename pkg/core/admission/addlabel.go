@@ -31,12 +31,12 @@ type patchOperation struct {
 }
 
 const (
-	PodLabelMixedKey             string              = "hc/mixed-pod"
-	PodAnnotationPriorityKey     string              = "hc/priority"
-	ContainerResourceCpuKey      corev1.ResourceName = "cmos.mixed/cpu"
-	ContainerResourceMemoryKey   corev1.ResourceName = "cmos.mixed/memory"
-	ContainerResourcePodCountKey corev1.ResourceName = "cmos.mixed/podcount"
-	PodNodeSelectorKey           string              = "cmos/mixed-schedule"
+	PodLabelMixedKey             string              = "hc\\/mixed-pod"
+	PodAnnotationPriorityKey     string              = "hc\\/priority"
+	ContainerResourceCpuKey      corev1.ResourceName = "cmos.mixed\\/cpu"
+	ContainerResourceMemoryKey   corev1.ResourceName = "cmos.mixed\\/memory"
+	ContainerResourcePodCountKey corev1.ResourceName = "cmos.mixed\\/podcount"
+	PodNodeSelectorKey           string              = "cmos\\/mixed-schedule"
 	// PodNodeSelectorLable string = `[
 	//      { "op": "add", "path": "/spec/template/spec/nodeSelector", "value": {"cmos/mixed-schedule": "true"}}
 	//  ]`
