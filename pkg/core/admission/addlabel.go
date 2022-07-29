@@ -131,6 +131,21 @@ func mutateContainerResource(deployment *appsv1.Deployment) (patch []patchOperat
 
 		patch = append(patch, patchOperation{
 			Op:   "add",
+			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/limits", index),
+			Value: map[corev1.ResourceName]resource.Quantity{
+				ContainerResourceMemoryKey: lims[corev1.ResourceMemory],
+			},
+		})
+		patch = append(patch, patchOperation{
+			Op:   "add",
+			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/limits", index),
+			Value: map[corev1.ResourceName]resource.Quantity{
+				ContainerResourceCpuKey: lims[corev1.ResourceCPU],
+			},
+		})
+
+		patch = append(patch, patchOperation{
+			Op:   "add",
 			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests", index),
 			Value: map[corev1.ResourceName]resource.Quantity{
 				ContainerResourceCpuKey: reqs[corev1.ResourceCPU],
@@ -141,20 +156,6 @@ func mutateContainerResource(deployment *appsv1.Deployment) (patch []patchOperat
 			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/requests", index),
 			Value: map[corev1.ResourceName]resource.Quantity{
 				ContainerResourceMemoryKey: reqs[corev1.ResourceMemory],
-			},
-		})
-		patch = append(patch, patchOperation{
-			Op:   "add",
-			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/limits", index),
-			Value: map[corev1.ResourceName]resource.Quantity{
-				ContainerResourceCpuKey: lims[corev1.ResourceCPU],
-			},
-		})
-		patch = append(patch, patchOperation{
-			Op:   "add",
-			Path: fmt.Sprintf("/spec/template/spec/containers/%d/resources/limits", index),
-			Value: map[corev1.ResourceName]resource.Quantity{
-				ContainerResourceMemoryKey: lims[corev1.ResourceMemory],
 			},
 		})
 
