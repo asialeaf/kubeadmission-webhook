@@ -19,8 +19,6 @@ spec:
       - key: node-role.kubernetes.io/master
         operator: Exists
         effect: NoSchedule
-      nodeSelector:
-        kubernetes.io/hostname: k8s-master
       containers:
       - image: nginx:1.12
         name: web
