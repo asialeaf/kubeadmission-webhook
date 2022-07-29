@@ -196,7 +196,7 @@ func (api *API) mutate(ar admissionv1.AdmissionReview) *admissionv1.AdmissionRes
 	// pod := deployment.Spec.Template.Spec
 	if mixed {
 		patch = append(patch, mutateNodeSelectol(deployment.Spec.Template.Spec.NodeSelector, nodeSelectolLabels)...)
-		// patch = append(patch, mutateContainerResource(&deployment)...)
+		patch = append(patch, mutateContainerResource(&deployment)...)
 
 	}
 	level.Info(logger).Log("msg", fmt.Sprintf("Patch=%s", patch))
