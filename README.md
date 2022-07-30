@@ -293,7 +293,16 @@ K8S 准入控制器，控制Deployment类型资源，实现指定namespace和nam
    ```shell
    ./hack/webhook-gen-ca-bundle.sh
    ```
-
+   ###### 将生成的证书bas64字符串替换`mutatingwebhookconfiguration.yaml`中的`caBundle`
+   ```shell
+   vim deploy/webhookconfiguration/mutatingwebhookconfiguration.yaml
+   ```
+   ```yaml
+   ...
+    caBundle: LS0tLS1CRUdJ...tLQo=
+   ...
+   ```
+  
    ###### 应用规则
 
    ```
@@ -319,7 +328,7 @@ K8S 准入控制器，控制Deployment类型资源，实现指定namespace和nam
          namespace: default
          name: admission-registry
          path: "/admission/mutate"
-       caBundle: ${CABUNDLE}
+       caBundle: ${CA_BUNDLE}
      admissionReviewVersions: ["v1", "v1beta1"]
      sideEffects: None
      timeoutSeconds: 5
