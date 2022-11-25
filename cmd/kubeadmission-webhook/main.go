@@ -42,7 +42,7 @@ func run() int {
 		).Default("/etc/webhook/certs/tls.crt").ExistingFile()
 		tlsKeyFile = kingpin.Flag(
 			"tls.private-key-file",
-			"File containing the default x509 private key matching --tls-cert-file.",
+			"File containing the default x509 private key matching --tls.private-key-file.",
 		).Default("/etc/webhook/certs/tls.key").ExistingFile()
 	)
 
